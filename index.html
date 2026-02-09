@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metin 💜 Rana</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Patrick+Hand&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- MOR TEMA --- */
+        :root {
+            --primary: #9b59b6;
+            --yarn-color: #8e44ad;
+            --string-color: #d2b4de;
+            --bg-color: #f4ecf7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            color: #444;
+        }
+
+        /* MÜZİK BAŞLATMA EKRANI */
+        #music-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+        #music-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .start-btn {
+            background: white;
+            color: #764ba2;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Patrick Hand', cursive;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: transform 0.3s;
+        }
+        .start-btn:hover {
+            transform: scale(1.1);
+        }
+        .start-btn i {
+            margin-right: 10px;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        header { text-align: center; padding: 80px 20px 40px; position: relative; z-index: 5; }
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.8rem; color: var(--primary);
+            text-shadow: 2px 2px 0px #fff;
+            margin-bottom: 10px;
+        }
+        .timer-badge {
+            background: #fff; padding: 8px 20px; border-radius: 30px;
+            display: inline-block; border: 2px dashed var(--primary);
+            font-family: 'Patrick Hand', cursive; color: var(--primary);
+        }
+
+        .roadmap-container {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            padding-top: 50px;
+            padding-bottom: 100px;
+        }
+
+        svg#yarn-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            overflow: visible;
+        }
+
+        path#yarn-path {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 0; 
+            stroke-dashoffset: 0;
+        }
+
+        #yarn-ball {
+            position: absolute;
+            top: 0; left: 50%;
+            width: 60px; height: 60px;
+            background: radial-gradient(circle at 30% 30%, #be93d4, #8e44ad);
+            border-radius: 50%;
+            z-index: 20;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 15px rgba(142, 68, 173, 0.5);
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(0,0,0,0.1) 5px, rgba(0,0,0,0.1) 10px);
+            transform: translateX(-50%);
+        }
+        #yarn-ball::after {
+            content: '❤'; color: white; font-size: 1.5rem;
+        }
+
+        .roadmap-item {
+            position: relative;
+            width: 100%;
+            min-height: 250px;
+            display: flex;
+            margin-bottom: 60px;
+            z-index: 10;
+        }
+
+        .content-box {
+            width: 45%; background: #fff; padding: 15px 15px 50px 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            border-radius: 8px;
+            
+            /* Başlangıç durumu: Gizli, küçük ve aşağıda */
+            opacity: 0;
+            transform: scale(0.5) translateY(50px);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .content-box.visible { opacity: 1; transform: scale(1) translateY(0); }
+        .content-box:hover { transform: scale(1.05) translateY(-5px) !important; z-index: 100; }
+        
+        .content-box img { width: 100%; display: block; border-radius: 4px; border: 1px solid #eee; }
+
+        .roadmap-item:nth-child(odd) { justify-content: flex-start; padding-left: 20px; }
+        .roadmap-item:nth-child(even) { justify-content: flex-end; padding-right: 20px; }
+        
+        .roadmap-item:nth-child(odd) .content-box { transform: rotate(-2deg) scale(0.5); }
+        .roadmap-item:nth-child(even) .content-box { transform: rotate(2deg) scale(0.5); }
+        .roadmap-item:nth-child(odd) .content-box.visible { transform: rotate(-2deg) scale(1); }
+        .roadmap-item:nth-child(even) .content-box.visible { transform: rotate(2deg) scale(1); }
+
+        .caption {
+            text-align: center; font-family: 'Patrick Hand', cursive;
+            font-size: 1.3rem; margin-top: 15px; color: var(--primary);
+            position: absolute; bottom: 15px; width: 100%; left: 0;
+        }
+
+        .tape {
+            position: absolute; top: -15px; left: 35%; width: 30%; height: 35px;
+            background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.1);
+            transform: rotate(-3deg); box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        @media screen and (max-width: 600px) {
+            .roadmap-item { justify-content: center !important; padding: 0 !important; }
+            .content-box { width: 80%; margin-left: auto; margin-right: auto; }
+            h1 { font-size: 3rem; }
+        }
+
+        .music-btn {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 60px; height: 60px; background: #fff;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 100;
+            color: var(--primary); font-size: 1.4rem; cursor: pointer;
+            border: 3px solid var(--primary);
+            transition: transform 0.3s;
+        }
+        .music-btn:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- MÜZİK BAŞLATMA EKRANI -->
+    <div id="music-overlay">
+        <button class="start-btn" onclick="startExperience()">
+            <i class="fas fa-heart"></i> Başlat 💜
+        </button>
+    </div>
+
+    <header>
+        <h1>Metin <i class="fas fa-heart" style="font-size: 0.8em; color: var(--primary);"></i> Rana</h1>
+        <div class="timer-badge" id="timer">Hesaplanıyor...</div>
+        <p style="margin-top: 20px; color: #888; font-size: 0.9rem;">(Yumağı Yuvarla Sevgilim 💇)</p>
+    </header>
+
+    <div class="roadmap-container" id="roadmap">
+        <svg id="yarn-svg">
+            <path id="yarn-path" d="" />
+        </svg>
+        <div id="yarn-ball"></div>
+    </div>
+
+    <button class="music-btn" onclick="toggleMusic()"><i class="fas fa-music"></i></button>
+    <audio id="player" loop>
+        <source src="assets/sarki.mp3" type="audio/mpeg">
+    </audio>
+
+    <footer style="text-align: center; padding: 100px 20px; color: var(--primary);">
+        <p>Seni Çok Seviyorum Ballı Küplüm 💜</p>
+    </footer>
+
+    <script>
+        // --- AYARLAR ---
+        const photoCount = 33; 
+        const startDate = new Date(2025, 4, 25); 
+
+        const captions = [
+            "Senle sarıllaşmayı çok seviyorum", "Seninle öppeleşmek en sevdiğim şey",
+            "Pampiko popom benim 💜", "Canımlı benimlim", "Ballı küplüm",
+            "Sen benim en güzel manzaramsın", "Dipini yerimmmm", "Gülüşüne kurban",
+            "İyiki varsın güzelim benimmmmmm", "Her şey seninle anlamlı", "Kalbim senin yuvan",
+            "Seni çok seviyorummmmmmmm", "Benim güzel sevgilim", "Aşkın tarifi sensin",
+            "Hayatımmmmm", "İyiki tanışmışız iyiki hayatımdasın", "Yanında zaman duruyor",
+            "Bakışların huzur veriyor", "Seninle her yer cennet", "Hayallerimin başrolü",
+            "Ne şanslıyım seninle...", "Dudaklarını ısırırım"
+        ];
+
+        const container = document.getElementById('roadmap');
+        const svg = document.getElementById('yarn-svg');
+        const path = document.getElementById('yarn-path');
+        const ball = document.getElementById('yarn-ball');
+
+        // --- MÜZİK BAŞLATMA ---
+        const player = document.getElementById('player');
+        const musicBtn = document.querySelector('.music-btn');
+        const overlay = document.getElementById('music-overlay');
+
+        function startExperience() {
+            player.play().then(() => {
+                overlay.classList.add('hidden');
+                musicBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            }).catch(err => {
+                console.log('Müzik çalınamadı:', err);
+                overlay.classList.add('hidden');
+            });
+        }
+
+        function toggleMusic() {
+            if(player.paused) { 
+                player.play(); 
+                musicBtn.innerHTML = '<i class="fas fa-pause"></i>'; 
+            } else { 
+                player.pause(); 
+                musicBtn.innerHTML = '<i class="fas fa-music"></i>'; 
+            }
+        }
+
+        // --- 1. KARTLARI DİZME ---
+        for (let i = 1; i <= photoCount; i++) {
+            const div = document.createElement('div');
+            div.className = 'roadmap-item';
+            const caption = captions[(i - 1) % captions.length];
+            
+            div.innerHTML = `
+                <div class="content-box">
+                    <div class="tape"></div>
+                    <img src="assets/resim${i}.webp" loading="lazy" alt="Biz">
+                    <div class="caption">${caption}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        // --- 2. YOLU ÇİZME (DÜZELTİLMİŞ) ---
+        let pathLength = 0;
+        
+        function drawPath() {
+            const items = document.querySelectorAll('.roadmap-item');
+            if (items.length === 0) return;
+
+            // SVG boyunu ayarla
+            const totalHeight = container.scrollHeight;
+            svg.style.height = totalHeight + "px";
+
+            const svgRect = svg.getBoundingClientRect();
+            const centerX = svgRect.width / 2;
+            
+            let d = `M ${centerX} 0 `;
+
+            items.forEach((item, index) => {
+                const box = item.querySelector('.content-box');
+                if (!box) return;
+
+                const boxRect = box.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                // Kutunun container içindeki Y pozisyonu
+                const relativeY = boxRect.top - containerRect.top + window.scrollY + (boxRect.height / 2);
+                
+                let itemX;
+                if (window.innerWidth <= 600) {
+                    itemX = centerX;
+                } else {
+                    if (index % 2 === 0) { // Sol taraf
+                        const boxCenterX = boxRect.left - containerRect.left + (boxRect.width / 2);
+                        itemX = boxCenterX + (boxRect.width / 2) + 30;
+                    } else { // Sağ taraf
+                        const boxCenterX = boxRect.left - containerRect.left + (boxRect.width / 2);
+                        itemX = boxCenterX - (boxRect.width / 2) - 30;
+                    }
+                }
+                
+                d += `L ${itemX} ${relativeY} `;
+            });
+
+            d += `L ${centerX} ${totalHeight} `;
+            
+            path.setAttribute('d', d);
+            pathLength = path.getTotalLength();
+            
+            if (pathLength > 0) {
+                path.style.strokeDasharray = pathLength;
+                path.style.strokeDashoffset = pathLength;
+            }
+        }
+
+        // --- 3. SCROLL HAREKETİ (DÜZELTİLMİŞ) ---
+        function updateScroll() {
+            const scrollTop = window.scrollY;
+            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+            
+            if (docHeight <= 0 || pathLength <= 0) return;
+
+            let scrollPercent = Math.min(1, scrollTop / docHeight);
+            
+            const drawLength = pathLength * scrollPercent;
+            path.style.strokeDashoffset = pathLength - drawLength;
+
+            if (drawLength > 0) {
+                try {
+                    const point = path.getPointAtLength(drawLength);
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    // Yumağı path üzerinde hareket ettir
+                    ball.style.left = point.x + 'px';
+                    ball.style.top = (point.y - containerRect.top - window.scrollY) + 'px';
+                    ball.style.transform = `translate(-50%, -50%) rotate(${scrollTop * 0.5}deg)`;
+
+                    // Kartları göster
+                    const triggerY = point.y;
+                    const items = document.querySelectorAll('.roadmap-item');
+                    items.forEach(item => {
+                        const box = item.querySelector('.content-box');
+                        const boxRect = box.getBoundingClientRect();
+                        const boxTop = boxRect.top - containerRect.top + window.scrollY;
+                        
+                        if (boxTop <= triggerY + 100) {
+                            box.classList.add('visible');
+                        }
+                    });
+                } catch(e) {
+                    console.log('Point hesaplama hatası:', e);
+                }
+            }
+        }
+
+        // --- 4. GÖZCÜLERİ ---
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                drawPath();
+                updateScroll();
+            }, 100);
+        });
+
+        window.addEventListener('load', () => { 
+            drawPath();
+            updateScroll();
+            // İlk kutuyu göster
+            setTimeout(() => {
+                const firstBox = document.querySelector('.content-box');
+                if (firstBox) firstBox.classList.add('visible');
+            }, 500);
+        });
+        
+        window.addEventListener('scroll', updateScroll);
+
+        // Görseller yüklenirken path'i yeniden çiz
+        const images = document.querySelectorAll('img');
+        let loadedCount = 0;
+        images.forEach(img => {
+            img.addEventListener('load', () => {
+                loadedCount++;
+                if (loadedCount === images.length) {
+                    setTimeout(() => {
+                        drawPath();
+                        updateScroll();
+                    }, 100);
+                }
+            });
+        });
+
+        // --- 5. SAYAÇ ---
+        function updateTimer() {
+            const now = new Date();
+            const diff = now - startDate;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            document.getElementById('timer').innerText = `${days} Gündür Kalbimdesin`;
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+    </script>
+</body>
+</html>
